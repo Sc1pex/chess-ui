@@ -224,7 +224,7 @@ export class Board extends LitElement {
   }
 
   server_start() {
-    fetch("http://localhost:7001/start", {
+    fetch(`${import.meta.env.VITE_SERVER_URL}/start`, {
       body: JSON.stringify({}),
       method: "POST",
       headers: {
@@ -244,7 +244,7 @@ export class Board extends LitElement {
   }
 
   server_move(move: Move) {
-    fetch(`http://localhost:7001/${this.id}`, {
+    fetch(`${import.meta.env.VITE_SERVER_URL}/${this.id}`, {
       body: JSON.stringify(move),
       method: "POST",
       headers: {
