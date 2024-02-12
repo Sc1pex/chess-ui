@@ -13,20 +13,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Rust and Wasm
-        uses: actions-rs/toolchain@v1
+      - name: Set up Rust and bun
+        uses: | 
+          actions-rs/toolchain@v1
+          oven-sh/setup-bun@v1
         with:
           profile: minimal
           toolchain: stable
           override: true
 
-      - name: Install wasm-pack
+      - name: Install wasm-pack 
         run: |
           curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - name: Install Bun
-        run: |
-          curl -fsSL https://bun.sh/install | bash
 
       - name: Build Rust Wasm
         run: |
