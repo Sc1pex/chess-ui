@@ -1,0 +1,47 @@
+name: Build chess ui
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Rust and Wasm
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install wasm-pack
+        run: |
+          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+
+      - name: Build Rust Wasm
+        run: |
+          cd wasm/
+          ./run.sh
+
+      - name: Install dependencies and build
+        run: |
+          bun install
+          bun run build
+          
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 4f78cad00843edc2e949d6cb5544960c
+          projectName: chess-ui
+          directory: dist/
