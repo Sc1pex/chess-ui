@@ -1,5 +1,7 @@
 #!/bin/bash
 
 wasm-pack build lib
-cd ..
+cd lib/pkg
+bun link
+cd ../../..
 bun i
