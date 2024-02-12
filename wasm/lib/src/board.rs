@@ -46,8 +46,6 @@ pub(crate) enum Castle {
 #[wasm_bindgen]
 impl Board {
     pub fn make_move(&mut self, m: Move) -> bool {
-        console_log!("Making move: {:?}", m);
-
         let bb = self.board(m.piece);
         bb.clear(m.from);
         bb.set(m.to);

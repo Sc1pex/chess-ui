@@ -1,24 +1,17 @@
-import {
-  Board,
-  Move,
-  Piece,
-  legal_moves,
-  square_from_num,
-  square_to_num,
-} from "chess-lib";
+import { Move, Piece, square_from_num, square_to_num } from "chess-lib";
 import { LitElement, css, html } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { styleMap } from "lit/directives/style-map.js";
 
 @customElement("board-el")
 export class BoardEl extends LitElement {
-  @state()
-  private board: Board = Board.start_pos();
-  @state()
-  legal_moves: Array<Move> = legal_moves(this.board);
-  @state()
-  pieces: Map<number, Piece> = new Map(this.board.pieces());
+  @property({ type: Array })
+  legal_moves: Array<Move> = [];
+  @property({ type: Object })
+  pieces: Map<number, Piece> = new Map();
+  @property({ type: Object })
+  handle_move: (move: Move) => void = () => {};
 
   board_ref = createRef<HTMLDivElement>();
   piece_hover_ref = createRef<HTMLDivElement>();
@@ -93,12 +86,7 @@ export class BoardEl extends LitElement {
         m.to == square_from_num(target_idx),
     );
     if (mv) {
-      this.board.make_move(mv);
-      this.legal_moves = legal_moves(this.board);
-      this.pieces = new Map(this.board.pieces());
-
-      console.log(this.pieces);
-      this.board.print();
+      this.handle_move(mv);
     } else {
       const tile = this.shadowRoot!.getElementById(
         `tile-${this.drag_start_idx}`,
@@ -136,7 +124,6 @@ export class BoardEl extends LitElement {
   }
 
   render() {
-    console.log("rerender");
     return html`
       <div
         class="container"

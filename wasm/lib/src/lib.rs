@@ -5,4 +5,6 @@ pub mod movegen;
 pub mod piece;
 pub mod square;
 
+pub mod bot;
+
 mod console_log;
