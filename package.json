@@ -9,12 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lit": "^3.1.0"
+    "lit": "^3.1.0",
+    "chess-lib": "link:lib"
   },
   "devDependencies": {
     "ts-lit-plugin": "^2.0.2",
     "typescript": "^5.2.2",
     "unocss": "^0.58.4",
-    "vite": "^5.0.8"
+    "vite": "^5.0.8",
+    "vite-plugin-top-level-await": "^1.4.1",
+    "vite-plugin-wasm": "^3.3.0"
   }
 }

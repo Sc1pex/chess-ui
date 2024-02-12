@@ -1,22 +1,27 @@
+import {
+  Board,
+  Move,
+  Piece,
+  legal_moves,
+  square_from_num,
+  square_to_num,
+} from "chess-lib";
 import { LitElement, css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { Piece } from "../piece";
-
-type Move = {
-  from: number;
-  to: number;
-};
 
 @customElement("board-el")
-export class Board extends LitElement {
+export class BoardEl extends LitElement {
   @state()
-  private pieces: Map<number, Piece> = new Map();
+  private board: Board = Board.start_pos();
+  @state()
+  legal_moves: Array<Move> = legal_moves(this.board);
+  @state()
+  pieces: Map<number, Piece> = new Map(this.board.pieces());
 
   board_ref = createRef<HTMLDivElement>();
   piece_hover_ref = createRef<HTMLDivElement>();
-  legal_moves = new Array<Move>();
   id = "";
   is_dragging = false;
   drag_start_idx = -1;
@@ -49,13 +54,17 @@ export class Board extends LitElement {
     const tile = this.shadowRoot!.getElementById(`tile-${idx}`);
     tile!.style.backgroundImage = "none";
 
-    this.piece_hover_ref.value!.style.backgroundImage = `url(assets/${p.color}_${p.kind}.svg)`;
+    this.piece_hover_ref.value!.style.backgroundImage = `url(${piece_asset(
+      p,
+    )})`;
     this.piece_hover_ref.value!.style.left = `${e.clientX - 32}px`;
     this.piece_hover_ref.value!.style.top = `${e.clientY - 32}px`;
 
     for (const move of this.legal_moves) {
-      if (move.from == idx) {
-        const move_tile = this.shadowRoot!.getElementById(`move-${move.to}`);
+      if (move.from == square_from_num(idx)) {
+        const move_tile = this.shadowRoot!.getElementById(
+          `move-${square_to_num(move.to)}`,
+        );
         move_tile!.style.zIndex = "1";
       }
     }
@@ -68,29 +77,28 @@ export class Board extends LitElement {
     const target_idx = this.get_tile_idx(e);
     if (target_idx == null) return;
 
-    const p = this.pieces.get(this.drag_start_idx);
-    if (!p) {
-      console.error("Something bad happened", this.drag_start_idx);
-      return;
-    }
-
     for (const move of this.legal_moves) {
-      const move_tile = this.shadowRoot!.getElementById(`move-${move.to}`);
+      const move_tile = this.shadowRoot!.getElementById(
+        `move-${square_to_num(move.to)}`,
+      );
       move_tile!.style.zIndex = "-1";
     }
 
     this.piece_hover_ref.value!.style.left = "-100px";
     this.piece_hover_ref.value!.style.top = "-100px";
 
-    if (
-      this.legal_moves.some(
-        (m) => m.from == this.drag_start_idx && m.to == target_idx,
-      )
-    ) {
-      this.server_move({
-        from: this.drag_start_idx,
-        to: target_idx,
-      });
+    const mv = this.legal_moves.find(
+      (m) =>
+        m.from == square_from_num(this.drag_start_idx) &&
+        m.to == square_from_num(target_idx),
+    );
+    if (mv) {
+      this.board.make_move(mv);
+      this.legal_moves = legal_moves(this.board);
+      this.pieces = new Map(this.board.pieces());
+
+      console.log(this.pieces);
+      this.board.print();
     } else {
       const tile = this.shadowRoot!.getElementById(
         `tile-${this.drag_start_idx}`,
@@ -120,12 +128,15 @@ export class Board extends LitElement {
     this.piece_hover_ref.value!.style.top = "-100px";
 
     for (const move of this.legal_moves) {
-      const move_tile = this.shadowRoot!.getElementById(`move-${move.to}`);
+      const move_tile = this.shadowRoot!.getElementById(
+        `move-${square_to_num(move.to)}`,
+      );
       move_tile!.style.zIndex = "-1";
     }
   }
 
   render() {
+    console.log("rerender");
     return html`
       <div
         class="container"
@@ -152,11 +163,9 @@ export class Board extends LitElement {
     let piece_style = styleMap({});
     if (this.pieces.has(idx)) {
       const p = this.pieces.get(idx)!;
-      const board_rect = this.board_ref.value?.getBoundingClientRect();
-      if (!board_rect) return;
 
       piece_style = styleMap({
-        "background-image": `url(assets/${p.color}_${p.kind}.svg)`,
+        "background-image": `url(${piece_asset(p)})`,
         "background-size": "contain",
       });
     }
@@ -218,51 +227,14 @@ export class Board extends LitElement {
       background-size: contain;
     }
   `;
-
-  firstUpdated() {
-    this.server_start();
-  }
-
-  server_start() {
-    fetch(`${import.meta.env.VITE_SERVER_URL}/start`, {
-      body: JSON.stringify({}),
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((json) => {
-        this.legal_moves = json.legal_moves;
-        this.id = json.id;
-        this.pieces = new Map(
-          json.pieces.map((p: any) => [p[0], p[1]] as [number, Piece]),
-        );
-        console.log(this.pieces);
-        console.log(this.legal_moves);
-      });
-  }
-
-  server_move(move: Move) {
-    fetch(`${import.meta.env.VITE_SERVER_URL}/${this.id}`, {
-      body: JSON.stringify(move),
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((json) => {
-        this.legal_moves = json.legal_moves;
-        this.pieces = new Map(
-          json.pieces.map((p: any) => [p[0], p[1]] as [number, Piece]),
-        );
-      });
-  }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    "board-el": Board;
+    "board-el": BoardEl;
   }
+}
+
+function piece_asset(p: Piece): String {
+  return `assets/${p.color.toString()}_${p.kind.toString().toLowerCase()}.svg`;
 }
