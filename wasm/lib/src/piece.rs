@@ -26,12 +26,17 @@ impl PieceKind {
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Copy, Debug, Default)]
-#[wasm_bindgen]
 #[serde(rename_all = "lowercase")]
+#[wasm_bindgen]
 pub enum Color {
     #[default]
     White,
     Black,
+}
+
+#[wasm_bindgen]
+pub fn opposite_color(color: Color) -> Color {
+    color.opposite()
 }
 
 impl Color {

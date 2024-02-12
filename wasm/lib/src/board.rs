@@ -3,7 +3,7 @@
 use crate::{
     bitboard::BitBoard,
     console_log,
-    movegen::{square_attacked, Move, SpecialMove},
+    movegen::{generate_moves, legal_moves, square_attacked, Move, SpecialMove},
     piece::*,
     square::Square,
 };
@@ -33,6 +33,18 @@ pub struct Board {
     pub side_to_move: Color,
     pub(crate) en_passant: Option<Square>,
     pub(crate) can_castle: u8,
+
+    pub game_state: GameState,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[wasm_bindgen]
+pub enum GameState {
+    #[default]
+    InProgress,
+    Checkmate,
+    Stalemate,
+    Draw,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -159,7 +171,6 @@ impl Board {
         }
 
         self.side_to_move = self.side_to_move.opposite();
-
         true
     }
 
@@ -362,6 +373,21 @@ impl Board {
         self.b_occ =
             self.b_pawn | self.b_knight | self.b_bishop | self.b_rook | self.b_queen | self.b_king;
         self.occ = self.w_occ | self.b_occ;
+    }
+}
+
+#[wasm_bindgen]
+impl Board {
+    pub fn update_state(&mut self) {
+        let moves = legal_moves(self);
+        if moves.is_empty() {
+            let king = self.boards_color(self.side_to_move)[5].0.trailing_zeros() as u64;
+            if square_attacked(self, king, self.side_to_move.opposite()) {
+                self.game_state = GameState::Checkmate;
+            } else {
+                self.game_state = GameState::Stalemate;
+            }
+        }
     }
 }
 

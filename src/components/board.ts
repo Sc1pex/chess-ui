@@ -201,7 +201,6 @@ export class BoardEl extends LitElement {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
       user-select: none;
     }
 
